@@ -36,7 +36,7 @@ def print_contents_of_post(post_url):
         f.write('<meta charset="utf-8"/>\n')
         f.write("{}\n".format(soup.style.encode('utf8')))
 
-        # glob all the css into 1 tag and embed that
+        # Bundle each stylesheet and in-line into their own style tag
         css_links = []
         for stylesheet in soup.find_all('link', rel="stylesheet"):
             css_links.append(stylesheet['href'])
