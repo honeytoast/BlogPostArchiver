@@ -53,6 +53,11 @@ def print_contents_of_post(post_url):
             css_links.append(Stylesheet(url=stylesheet['href'], id=stylesheet['id'], media=stylesheet['media']))
         f.write(bundle_css(css_links).encode('utf8'))
 
+        # Add a little more custom styling for padding
+        f.write('<style>\ndiv {\n  padding-left: 100px;\n  padding-right: 100px;\n}\n</style>')
+        f.write('<div id="main" class="one-sidebar">')
+        f.write('<div id="content" class="site-content">')
+
         # Mapping for domain name of the site to the tag that wraps the content of the post we are interested in
         # The content of a single WP post on a page of a WP post is wrapped in the <article>...</article>
         # While the blogspot content is wrapped in <div class="post-body entry-content>...</div>
@@ -62,13 +67,14 @@ def print_contents_of_post(post_url):
         elif re.search(WORDPRESS, post_url) != None:
             f.write(soup.article.encode('utf8'))
 
+        f.write('</div>\n</div>\n')
         f.write('</html>')
         f.close()
     except Exception as e:
         print("**Error**: Could not write to {}. Error: {}".format(filename, e))
 
 if __name__  == '__main__':
-    f = open('7102019.txt', 'r')
+    f = open('7122019.txt', 'r')
     for link in f:
         try:
             print_contents_of_post(link.strip())
