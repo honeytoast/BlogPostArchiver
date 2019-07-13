@@ -1,12 +1,17 @@
 #!/usr/bin/python
 # This Python file uses the following encoding: utf-8
+
 import requests
 import re
 import sys
+from collections import namedtuple
 from bs4 import BeautifulSoup
+
 
 BLOGSPOT = re.compile(".*blogspot\.com*")
 WORDPRESS = re.compile(".*wordpress\.com*")
+
+Stylesheet = namedtuple("Stylesheet", "url id media")
 
 def get_page_text(post_url):
     try:
@@ -15,15 +20,21 @@ def get_page_text(post_url):
         print("Couldn't get content of {}.\n**Error**: {}".format(post_url, e))
     return r.text
 
-def bundle_css(css_links):
-    custom_css = ""
+def bundle_css(stylesheets):
+    custom_css_tags = []
     try:
-        for css_link in css_links:
-            r = requests.get(css_link)
-            custom_css = custom_css + '<style type="text/css">' + r.text + '</style>' + '\n'
+        for stylesheet in stylesheets:
+            style_tag = []
+            r = requests.get(stylesheet.url)
+            custom_attributes = ''
+            if stylesheet.id != None:
+                custom_attributes += ' id="{}"'.format(stylesheet.id)
+            if stylesheet.media != None:
+                custom_attributes += ' media="{}"'.format(stylesheet.media)
+            custom_css_tags.append('<style type="text/css"' + custom_attributes + '>' + r.text + '</style>')
     except Exception as e:
-        print('**Error**: Bundling css from {}, {}'.format(css_links, e))
-    return custom_css
+        print('**Error**: Bundling css from {}, {}'.format(stylesheets, e))
+    return "\n".join(custom_css_tags)
 
 def print_contents_of_post(post_url):
     page_text = get_page_text(post_url)
@@ -39,7 +50,7 @@ def print_contents_of_post(post_url):
         # Bundle each stylesheet and in-line into their own style tag
         css_links = []
         for stylesheet in soup.find_all('link', rel="stylesheet"):
-            css_links.append(stylesheet['href'])
+            css_links.append(Stylesheet(url=stylesheet['href'], id=stylesheet['id'], media=stylesheet['media']))
         f.write(bundle_css(css_links).encode('utf8'))
 
         # Mapping for domain name of the site to the tag that wraps the content of the post we are interested in
