@@ -1,15 +1,19 @@
 #!/usr/bin/python
 # This Python file uses the following encoding: utf-8
 
-import requests
-import re
 import sys
+import re
+import tempfile
+import requests
 from collections import namedtuple
 from bs4 import BeautifulSoup
 
 
 BLOGSPOT = re.compile(".*blogspot\.com*")
 WORDPRESS = re.compile(".*wordpress\.com*")
+
+# A cache of url to path for temporary css files
+CSS_CACHE = {}
 
 Stylesheet = namedtuple("Stylesheet", "url id media")
 
@@ -25,13 +29,20 @@ def bundle_css(stylesheets):
     try:
         for stylesheet in stylesheets:
             style_tag = []
-            r = requests.get(stylesheet.url)
+            if stylesheet.url not in CSS_CACHE:
+                r = requests.get(stylesheet.url)
+                temp = tempfile.NamedTemporaryFile(delete=False)
+                temp.write(r.text.encode('utf8'))
+                temp.close()
+                CSS_CACHE[stylesheet.url] = temp.name
             custom_attributes = ''
             if stylesheet.id != None:
                 custom_attributes += ' id="{}"'.format(stylesheet.id)
             if stylesheet.media != None:
                 custom_attributes += ' media="{}"'.format(stylesheet.media)
-            custom_css_tags.append('<style type="text/css"' + custom_attributes + '>' + r.text + '</style>')
+            css_file = open(CSS_CACHE[stylesheet.url], 'r')
+            custom_css_tags.append('<style type="text/css"' + custom_attributes + '>' + css_file.read() + '</style>')
+            css_file.close()
     except Exception as e:
         print('**Error**: Bundling css from {}, {}'.format(stylesheets, e))
     return "\n".join(custom_css_tags)
@@ -74,7 +85,7 @@ def print_contents_of_post(post_url):
         print("**Error**: Could not write to {}. Error: {}".format(filename, e))
 
 if __name__  == '__main__':
-    f = open('7122019.txt', 'r')
+    f = open('missedlinks.txt', 'r')
     for link in f:
         try:
             print_contents_of_post(link.strip())
