@@ -45,6 +45,7 @@ def bundle_css(stylesheets):
             css_file.close()
     except Exception as e:
         print('**Error**: Bundling css from {}, {}'.format(stylesheets, e))
+        
     return "\n".join(custom_css_tags)
 
 def print_contents_of_post(post_url):
@@ -52,40 +53,44 @@ def print_contents_of_post(post_url):
     soup = BeautifulSoup(page_text, 'html.parser')
 
     try:
-        filename = soup.title.string.encode('utf8') + ".html"
+        filename = "{}".format(soup.title.string) + ".html"
         f = open(filename, 'w')
-        f.write('<!DOCTYPE html>\n')
-        f.write('<meta charset="utf-8"/>\n')
-        f.write("{}\n".format(soup.style.encode('utf8')))
+        f.write("<!DOCTYPE html>\n")
+        f.write("<meta charset=\"utf-8\"/>\n")
+        f.write("{}\n".format(soup.style))
 
         # Bundle each stylesheet and in-line into their own style tag
         css_links = []
         for stylesheet in soup.find_all('link', rel="stylesheet"):
-            css_links.append(Stylesheet(url=stylesheet['href'], id=stylesheet['id'], media=stylesheet['media']))
-        f.write(bundle_css(css_links).encode('utf8'))
-
+            try:
+                css_links.append(Stylesheet(url=stylesheet['href'], id=stylesheet['id'], media=stylesheet['media']))
+            except:
+                # workaround for stylesheets without id / media tags
+                css_links.append(Stylesheet(url=stylesheet['href'], id=None, media=None))
+        f.write("{}".format(bundle_css(css_links)))
+        
         # Add a little more custom styling for padding
-        f.write('<style>\ndiv {\n  padding-left: 100px;\n  padding-right: 100px;\n}\n</style>')
-        f.write('<div id="main" class="one-sidebar">')
-        f.write('<div id="content" class="site-content">')
+        f.write("<style>\ndiv {\n  padding-left: 100px;\n  padding-right: 100px;\n}\n</style>")
+        f.write("<div id=\"main\" class=\"one-sidebar\">")
+        f.write("<div id=\"content\" class=\"site-content\">")
 
         # Mapping for domain name of the site to the tag that wraps the content of the post we are interested in
         # The content of a single WP post on a page of a WP post is wrapped in the <article>...</article>
         # While the blogspot content is wrapped in <div class="post-body entry-content>...</div>
         if re.search(BLOGSPOT, post_url) != None:
             for i in soup.find_all('div', "post-body entry-content"):
-                f.write(i.encode('utf8'))
+                f.write("{}".format(i))
         elif re.search(WORDPRESS, post_url) != None:
-            f.write(soup.article.encode('utf8'))
+            f.write("{}".format(soup.article))
 
-        f.write('</div>\n</div>\n')
-        f.write('</html>')
+        f.write("</div>\n</div>\n")
+        f.write("</html>")
         f.close()
     except Exception as e:
         print("**Error**: Could not write to {}. Error: {}".format(filename, e))
 
-if __name__  == '__main__':
-    f = open('missedlinks.txt', 'r')
+if __name__  == "__main__":
+    f = open("sample_article_links.txt", "r")
     for link in f:
         try:
             print_contents_of_post(link.strip())
