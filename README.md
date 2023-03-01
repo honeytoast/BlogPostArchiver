@@ -1,5 +1,6 @@
 # BlogPostArchiver
-Mini web scraper for archiving blogspot/wordpress blog posts
+Mini web scraper for archiving blogspot/wordpress blog posts.  
+Outputs one html file in the local directory corresponding for each URL in sample_article_links.txt.
 
 ## Requirements
 Python3  
